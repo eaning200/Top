@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Balance</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 50px 20px;
+    }
+    h2 {
+      color: #333;
+    }
+    .balance-display {
+      font-size: 3em;
+      color: #28a745;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .info {
+      color: #555;
+      margin-top: 20px;
+    }
+    a {
+      display: inline-block;
+      margin-top: 30px;
+      font-size: 18px;
+      color: #007BFF;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Your Current Balance</h2>
+  <div class="balance-display" id="balanceDisplay">0.00 TK</div>
+  <div class="info">
+    This includes tasks, referrals and bonuses.
+    <br> সকল টাস্ক এবং রেফারেল ইনকাম এখানে দেখানো হয়।
+  </div>
+  <a href="task.html">← Back to Tasks</a>
+
+  <script>
+    function getUserData() {
+      const data = localStorage.getItem("userData");
+      return data ? JSON.parse(data) : null;
+    }
+
+    function displayBalance() {
+      const balanceDiv = document.getElementById("balanceDisplay");
+      const userData = getUserData();
+      if (userData) {
+        balanceDiv.textContent = userData.balance.toFixed(2) + ' TK';
+      } else {
+        balanceDiv.textContent = '0.00 TK';
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", displayBalance);
+  </script>
+
+</body>
+</html>

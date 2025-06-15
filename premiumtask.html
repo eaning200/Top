@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Tasks</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #333; display: flex; flex-direction: column; align-items: center;}
+        header { background: linear-gradient(90deg, #FF9800, #E65100); color: white; padding: 1em 0; text-align: center; width: 100%; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .container { width: 95%; max-width: 800px; margin: 20px auto; padding: 25px; background-color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 12px;}
+        h1, h2 { text-align: center; color: #2c3e50; }
+        .home-link { color: white; text-decoration: none; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 1.6em; transition: color 0.3s;}
+        .home-link:hover { color: #ffebcc; }
+
+        .task-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* একটু বড় বাটন */
+            gap: 20px; /* গ্যাপ একটু বেশি */
+            margin-top: 25px;
+        }
+        .task-button {
+            background: linear-gradient(135deg, #f39c12, #f1c40f); /* উজ্জ্বল কমলা গ্রাডিয়েন্ট */
+            color: white;
+            border: none;
+            padding: 20px 15px; /* প্যাডিং বেশি */
+            text-align: center;
+            text-decoration: none;
+            font-size: 1.1em; /* ফন্ট সাইজ বড় */
+            font-weight: 600; /* ফন্ট ওয়েট বেশি */
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            display: flex; /* আইকন ও টেক্সট সেন্টারে আনার জন্য */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .task-button i { /* যদি আইকন ব্যবহার করতে চান */
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+        .task-button:hover:not([disabled]) {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .task-button.completed {
+            background: linear-gradient(135deg, #2ecc71, #27ae60); /* সবুজ গ্রাডিয়েন্ট */
+            cursor: not-allowed;
+            opacity: 0.8;
+            box-shadow: none;
+        }
+        .task-button[disabled]:not(.completed) {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+            transform: none; /* ডিসেবলড বাটনে কোনো hover ইফেক্ট থাকবে না */
+        }
+
+        .task-info-header { text-align: center; margin-bottom: 15px; font-size: 1.15em; }
+        .unlock-status-container {
+            text-align: center;
+            font-size: 1.1em;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid transparent;
+        }
+        .status-locked { color: #a94442; background-color: #f2dede; border-color: #ebccd1; }
+        .status-unlocked { color: #3c763d; background-color: #dff0d8; border-color: #d6e9c6; }
+
+        /* Modal Styles - আগের মতোই */
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); padding-top: 50px;}
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 30px; border: 1px solid #ccc; width: 90%; max-width: 480px; border-radius: 12px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.25); animation: fadeInModal 0.3s ease-out;}
+        @keyframes fadeInModal { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-content p { line-height: 1.7; margin-bottom: 25px; font-size: 1.15em; color: #333;}
+        .modal-actions button { padding: 12px 25px; margin: 8px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.05em; font-weight: 500; transition: background-color 0.2s, transform 0.1s;}
+        .modal-button-confirm { background-color: #28a745; color: white; }
+        .modal-button-confirm:hover { background-color: #218838; transform: translateY(-1px);}
+        .modal-button-cancel { background-color: #e74c3c; color: white; }
+        .modal-button-cancel:hover { background-color: #c0392b; transform: translateY(-1px);}
+        .modal-button-ok { background-color: #3498db; color: white; }
+        .modal-button-ok:hover { background-color: #2980b9; transform: translateY(-1px);}
+
+        /* Timer Popup - আগের মতোই */
+        .timer-popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000;}
+        .timer-content { background-color: #fff; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 400px;}
+        .timer-content h3 { margin-top: 0; color: #333; font-size: 1.4em;}
+        #countdown { font-size: 2.8em; color: #e74c3c; font-weight: bold; margin: 10px 0;}
+        .website-info { font-size: 0.95em; color: #555; margin-top:15px; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="Home.html" class="home-link"><i class="fas fa-home"></i></a>
+        <h1>Premium Tasks</h1>
+    </header>
+
+    <div class="container" id="premiumTaskContainer">
+        <h2>High Reward Opportunities</h2>
+        <div id="unlockStatusContainer" class="unlock-status-container">
+            <!-- Unlock status message will be shown here by JS -->
+        </div>
+        <div class="task-info-header">
+            <p>Complete tasks below for 60 TK each. 10 direct referrals needed to activate earnings from these tasks.</p>
+            <p>Premium tasks completed today: <span id="premiumTasksDoneToday">0</span>/10</p>
+        </div>
+        <div class="task-list" id="premiumTaskList">
+            <!-- TASK BUTTONS WILL ALWAYS BE VISIBLE HERE, GENERATED BY JS -->
+        </div>
+    </div>
+
+    <!-- Referral Check Modal -->
+    <div id="referralCheckModal" class="modal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <div id="modalActions" class="modal-actions">
+                <!-- Modal buttons will be added by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Popup -->
+    <div class="timer-popup" id="timerPopup">
+        <div class="timer-content">
+            <h3>Performing Task...</h3>
+            <p>Please remain on the page for:</p>
+            <div id="countdown">60</div>
+            <p>seconds to complete the task.</p>
+            <div class="website-info">
+                (Simulating task website visit. A new tab would open in a real site.)
+            </div>
+            <p id="simulatedWebsiteLink" style="font-weight:bold; margin-top:10px; word-break: break-all;"></p>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_PREMIUM_TASKS = 10;
+        const PREMIUM_TASK_REWARD = 60;
+        const PREMIUM_TASK_DURATION_SECONDS = 60;
+        const REFERRALS_TO_UNLOCK = 10;
+
+        const premiumTaskWebsites = [
+            "https://www.example.com/pt1", "https://www.example.org/pt2", "https://www.example.net/pt3",
+            "https://www.example.io/pt4", "https://www.example.dev/pt5", "https://www.example.com/pt6",
+            "https://www.example.org/pt7", "https://www.example.net/pt8", "https://www.example.io/pt9",
+            "https://www.example.dev/pt10"
+        ];
+
+        function getUserData() {
+            const data = localStorage.getItem('userData');
+            return data ? JSON.parse(data) : initializeUserData();
+        }
+
+        function saveUserData(userData) {
+            localStorage.setItem('userData', JSON.stringify(userData));
+        }
+
+        function initializeUserData() {
+            const initialUserData = {
+                balance: 0,
+                referrals: { level1: 0, level2: 0, level3: 0, totalDirectReferrals: 0 },
+                premiumTasksUnlocked: false, // This will be true if referrals >= 10
+                premiumTasksCompletedToday: { date: new Date().toISOString().slice(0, 10), count: 0, completedIndices: [] },
+                // ... other user data properties
+                tasksCompletedToday: { date: new Date().toISOString().slice(0, 10), count: 0, completedIndices: [] },
+                vipLevel: 0, vipLastClaimDate: null, dailyLoginDates: [],
+                totalRegularTasksCompleted: 0, withdrawalHistory: []
+            };
+            saveUserData(initialUserData);
+            return initialUserData;
+        }
+
+        function checkAndSetUnlockStatus() {
+            const userData = getUserData();
+            const currentlyUnlocked = userData.premiumTasksUnlocked;
+            const shouldBeUnlocked = userData.referrals.totalDirectReferrals >= REFERRALS_TO_UNLOCK;
+
+            if (currentlyUnlocked !== shouldBeUnlocked) {
+                userData.premiumTasksUnlocked = shouldBeUnlocked;
+                saveUserData(userData);
+            }
+            return shouldBeUnlocked;
+        }
+
+        function renderPremiumPageElements() {
+            const userData = getUserData();
+            const isUnlockedForEarning = checkAndSetUnlockStatus(); // Check and update unlock status
+
+            const unlockStatusDiv = document.getElementById('unlockStatusContainer');
+            if (!isUnlockedForEarning) {
+                unlockStatusDiv.innerHTML = `Premium Task earnings are currently <strong style="color: #a94442;">LOCKED</strong>. You need ${REFERRALS_TO_UNLOCK} direct referrals to activate earnings. <br>You currently have <strong>${userData.referrals.totalDirectReferrals}</strong> direct referrals.`;
+                unlockStatusDiv.className = 'unlock-status-container status-locked';
+            } else {
+                unlockStatusDiv.innerHTML = `Premium Task earnings are <strong style="color: #3c763d;">UNLOCKED</strong>! You have <strong>${userData.referrals.totalDirectReferrals}</strong> direct referrals.`;
+                unlockStatusDiv.className = 'unlock-status-container status-unlocked';
+            }
+
+            // Reset daily premium task count if it's a new day
+            const today = new Date().toISOString().slice(0, 10);
+            if (userData.premiumTasksCompletedToday.date !== today) {
+                userData.premiumTasksCompletedToday.date = today;
+                userData.premiumTasksCompletedToday.count = 0;
+                userData.premiumTasksCompletedToday.completedIndices = [];
+                saveUserData(userData);
+            }
+            document.getElementById('premiumTasksDoneToday').textContent = userData.premiumTasksCompletedToday.count;
+
+            const taskList = document.getElementById('premiumTaskList');
+            taskList.innerHTML = ''; // Clear previous buttons
+
+            for (let i = 0; i < TOTAL_PREMIUM_TASKS; i++) {
+                const button = document.createElement('button');
+                button.classList.add('task-button');
+                // button.innerHTML = `<i class="fas fa-star"></i> Premium Task ${i + 1}`; // Optionally add icon
+                button.textContent = `Premium Task ${i + 1}`;
+                button.dataset.taskIndex = i;
+
+                // Disable button if this specific task is completed today
+                if (userData.premiumTasksCompletedToday.completedIndices.includes(i)) {
+                    button.classList.add('completed');
+                    button.disabled = true;
+                    button.textContent = `Task ${i + 1} (Done)`;
+                }
+                // Disable button if daily limit for ALL premium tasks is reached (and this task isn't the one completed)
+                else if (userData.premiumTasksCompletedToday.count >= TOTAL_PREMIUM_TASKS) {
+                    button.disabled = true;
+                }
+
+                // Buttons are always visible and clickable. The modal handles the logic.
+                button.addEventListener('click', () => handlePremiumTaskClick(i));
+                taskList.appendChild(button);
+            }
+        }
+
+        function handlePremiumTaskClick(taskIndex) {
+            const userData = getUserData();
+            const canEarnFromTasks = userData.premiumTasksUnlocked; // True if referrals >= 10
+
+            // Prevent action if this specific task is already completed or daily limit is hit
+            // These should ideally be caught by disabled buttons, but good for safety
+            if (userData.premiumTasksCompletedToday.completedIndices.includes(taskIndex)) {
+                alert("You have already completed this task today.");
+                return;
+            }
+            if (userData.premiumTasksCompletedToday.count >= TOTAL_PREMIUM_TASKS && !userData.premiumTasksCompletedToday.completedIndices.includes(taskIndex)) {
+                alert("You have completed all 10 premium tasks for today.");
+                return;
+            }
+
+            showReferralCheckModal(taskIndex, canEarnFromTasks, userData.referrals.totalDirectReferrals);
+        }
+
+        function showReferralCheckModal(taskIndex, canEarn, currentReferrals) {
+            const modal = document.getElementById('referralCheckModal');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalActions = document.getElementById('modalActions');
+            modalActions.innerHTML = '';
+
+            if (canEarn) { // User has 10+ referrals
+                modalMessage.innerHTML = `You are eligible to earn from this task. <br>Do you want to start <strong>Premium Task ${taskIndex + 1}</strong>?`;
+                const confirmButton = document.createElement('button');
+                confirmButton.textContent = "Confirm & Start";
+                confirmButton.className = "modal-button-confirm";
+                confirmButton.onclick = () => {
+                    closeReferralCheckModal();
+                    startActualPremiumTask(taskIndex);
+                };
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = "Cancel";
+                cancelButton.className = "modal-button-cancel";
+                cancelButton.onclick = closeReferralCheckModal;
+                modalActions.appendChild(confirmButton);
+                modalActions.appendChild(cancelButton);
+            } else { // User has less than 10 referrals
+                modalMessage.innerHTML = `To earn from Premium Tasks, ${REFERRALS_TO_UNLOCK} direct referrals are required. <br>You currently have <strong>${currentReferrals}</strong> direct referrals. <br><br>You can still perform the task, but earnings will only be credited if you meet the referral requirement before task completion (in a real system) or for future tasks once unlocked. For this simulation, earnings are conditional on unlock status. <br><br>Do you wish to proceed with <strong>Premium Task ${taskIndex + 1}</strong> anyway (no earnings if locked)?`;
+                // OR a simpler message:
+                // modalMessage.innerHTML = `To earn from Premium Tasks, ${REFERRALS_TO_UNLOCK} direct referrals are required. <br>You currently have <strong>${currentReferrals}</strong> direct referrals. <br><br>Please complete ${REFERRALS_TO_UNLOCK} referrals to activate earnings and try again.`;
+
+                const proceedButton = document.createElement('button');
+                proceedButton.textContent = "Proceed (No Earnings if Locked)";
+                proceedButton.className = "modal-button-confirm"; // Green for proceed
+                proceedButton.onclick = () => {
+                     closeReferralCheckModal();
+                     startActualPremiumTask(taskIndex); // Task starts, earning logic handled in completePremiumTask
+                };
+
+                const okButton = document.createElement('button');
+                okButton.textContent = "Cancel"; // Changed from OK to Cancel
+                okButton.className = "modal-button-cancel"; // Red for cancel
+                okButton.onclick = closeReferralCheckModal;
+
+                modalActions.appendChild(proceedButton);
+                modalActions.appendChild(okButton);
+            }
+            modal.style.display = "block";
+        }
+
+        function closeReferralCheckModal() {
+            document.getElementById('referralCheckModal').style.display = "none";
+        }
+
+        let currentTaskInterval = null;
+        function startActualPremiumTask(taskIndex) {
+            const userData = getUserData(); // Get fresh data
+            // Safety check again if all tasks are done for the day for this user
+            if (userData.premiumTasksCompletedToday.count >= TOTAL_PREMIUM_TASKS && !userData.premiumTasksCompletedToday.completedIndices.includes(taskIndex)) {
+                alert("Daily limit for premium tasks already reached.");
+                renderPremiumPageElements(); // Re-render to ensure buttons are correctly disabled
+                return;
+            }
+
+
+            const targetWebsite = premiumTaskWebsites[taskIndex];
+            if (!targetWebsite) {
+                alert("Task website link error."); return;
+            }
+            document.getElementById('simulatedWebsiteLink').textContent = `Visit: ${targetWebsite}`;
+
+            const timerPopup = document.getElementById('timerPopup');
+            const countdownElement = document.getElementById('countdown');
+            timerPopup.style.display = 'flex';
+            let timeLeft = PREMIUM_TASK_DURATION_SECONDS;
+            countdownElement.textContent = timeLeft;
+
+            document.querySelectorAll('#premiumTaskList .task-button:not(.completed)').forEach(btn => btn.disabled = true);
+
+            if (currentTaskInterval) clearInterval(currentTaskInterval);
+            currentTaskInterval = setInterval(() => {
+                timeLeft--;
+                countdownElement.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(currentTaskInterval);
+                    currentTaskInterval = null;
+                    timerPopup.style.display = 'none';
+                    completePremiumTask(taskIndex);
+                }
+            }, 1000);
+        }
+
+        function completePremiumTask(taskIndex) {
+            const userData = getUserData();
+            const canEarn = userData.premiumTasksUnlocked; // Check unlock status AT THE TIME OF COMPLETION
+
+            let message = `Premium Task ${taskIndex + 1} completed! `;
+            if (canEarn) {
+                userData.balance += PREMIUM_TASK_REWARD;
+                message += `You earned ${PREMIUM_TASK_REWARD} TK.`;
+            } else {
+                message += `However, earnings are locked as you have less than ${REFERRALS_TO_UNLOCK} referrals.`;
+            }
+
+            userData.premiumTasksCompletedToday.count++;
+            if (!userData.premiumTasksCompletedToday.completedIndices) {
+                userData.premiumTasksCompletedToday.completedIndices = [];
+            }
+            userData.premiumTasksCompletedToday.completedIndices.push(taskIndex);
+            saveUserData(userData);
+            alert(message);
+            renderPremiumPageElements();
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('referralCheckModal')) {
+                closeReferralCheckModal();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', renderPremiumPageElements);
+    </script>
+</body>
+</html>

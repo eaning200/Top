@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earning Site - Home</title>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5; /* একটু ভিন্ন ব্যাকগ্রাউন্ড */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(90deg, #4CAF50, #2E7D32); /* গ্রাডিয়েন্ট হেডার */
+            color: white;
+            padding: 1.2em 0;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+        .container {
+            width: 95%;
+            max-width: 600px; /* মোবাইল ডিভাইসের জন্য ভালো */
+            margin: 20px auto;
+            padding: 25px;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 12px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            font-size: 1.6em;
+            margin-bottom: 15px;
+        }
+        .balance-info {
+            text-align: center;
+            font-size: 1.4em; /* ব্যালেন্সের ফন্ট সাইজ একটু বড় */
+            margin-bottom: 25px;
+            padding: 10px;
+            background-color: #e9f5e9;
+            border-radius: 8px;
+            color: #28a745;
+        }
+        .balance-info span {
+            font-weight: bold;
+            font-size: 1.5em; /* টাকার পরিমাণ আরও বড় */
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* সবসময় দুটি কলাম */
+            gap: 15px; /* গ্যাপ একটু কমানো */
+            margin-top: 20px;
+        }
+        .action-button {
+            color: white;
+            border: none;
+            padding: 20px 15px; /* প্যাডিং অ্যাডজাস্ট করা */
+            text-align: center;
+            text-decoration: none;
+            font-size: 1.1em; /* ফন্ট সাইজ অ্যাডজাস্ট করা */
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .action-button i {
+            font-size: 2.2em; /* আইকন সাইজ */
+            margin-bottom: 10px;
+        }
+        /* বিভিন্ন বাটনের জন্য ভিন্ন রঙ */
+        .btn-referral { background-color: #5cb85c; } /* Green */
+        .btn-tasks { background-color: #3498db; }    /* Blue */
+        .btn-premium { background-color: #f39c12; }  /* Orange */
+        .btn-vip { background-color: #e74c3c; }      /* Red */
+        .btn-balance { background-color: #1abc9c; }  /* Turquoise */
+        .btn-withdraw { background-color: #8e44ad; } /* Purple */
+
+        /* Footer (optional) */
+        footer {
+            margin-top: auto; /* Push footer to the bottom */
+            padding: 15px;
+            text-align: center;
+            color: #777;
+            font-size: 0.9em;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Earning Platform</h1> <!-- সহজ নাম -->
+    </header>
+
+    <div class="container">
+        <h2>Dashboard</h2>
+        <div class="balance-info">
+            Current Balance: <span id="currentBalance">0.00</span> TK
+        </div>
+
+        <div class="button-grid">
+            <a href="Refaral.html" class="action-button btn-referral">
+                <i class="fas fa-users"></i>
+                <span>Referral</span>
+            </a>
+            <a href="Task.html" class="action-button btn-tasks">
+                <i class="fas fa-list-check"></i> <!-- Changed icon for tasks -->
+                <span>Daily Tasks</span>
+            </a>
+            <a href="premiumtask.html" class="action-button btn-premium">
+                <i class="fas fa-star"></i>
+                <span>Premium Tasks</span>
+            </a>
+            <a href="Vip.html" class="action-button btn-vip">
+                <i class="fas fa-crown"></i>
+                <span>VIP Plan</span>
+            </a>
+            <a href="Balance.html" class="action-button btn-balance">
+                <i class="fas fa-wallet"></i>
+                <span>My Balance</span>
+            </a>
+            <a href="Withdraw.html" class="action-button btn-withdraw">
+                <i class="fas fa-money-bill-transfer"></i> <!-- Icon for withdraw -->
+                <span>Withdraw</span>
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        &copy; <span id="currentYear"></span> Your Earning Site. All rights reserved.
+    </footer>
+
+    <script>
+        // Initialize user data if not exists
+        function initializeUserData() {
+            if (!localStorage.getItem('userData')) {
+                const userData = {
+                    balance: 0,
+                    referrals: { level1: 0, level2: 0, level3: 0, totalDirectReferrals: 0 },
+                    tasksCompletedToday: { date: new Date().toISOString().slice(0, 10), count: 0, completedIndices: [] },
+                    premiumTasksUnlocked: false,
+                    premiumTasksCompletedToday: { date: new Date().toISOString().slice(0, 10), count: 0, completedIndices: [] },
+                    vipLevel: 0, 
+                    vipLastClaimDate: null,
+                    dailyLoginDates: [], 
+                    totalRegularTasksCompleted: 0,
+                    withdrawalHistory: []
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+            }
+        }
+
+        function getUserData() {
+            const data = localStorage.getItem('userData');
+            // If data is null (e.g., first visit or cleared storage), initialize and return it.
+            if (!data) {
+                initializeUserData();
+                return JSON.parse(localStorage.getItem('userData'));
+            }
+            return JSON.parse(data);
+        }
+
+        function updateBalanceDisplay() {
+            const userData = getUserData(); // This will now always return valid data (or initialize it)
+            if (document.getElementById('currentBalance')) {
+                document.getElementById('currentBalance').textContent = userData.balance.toFixed(2);
+            }
+        }
+        
+        function setFooterYear() {
+            if(document.getElementById('currentYear')) {
+                document.getElementById('currentYear').textContent = new Date().getFullYear();
+            }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeUserData(); // Ensure data is initialized on every load
+            updateBalanceDisplay();
+            setFooterYear();
+        });
+    </script>
+</body>
+</html>

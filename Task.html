@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Tasks</title>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+    }
+    .container {
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #00ffcc;
+    }
+    .task {
+      background: #1e1e1e;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 10px;
+      box-shadow: 0 0 5px #00ffcc;
+    }
+    .task button, .task input[type="file"] {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #00ffcc;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .task input[type="file"] {
+      background: #fff;
+      color: #000;
+    }
+    .task.completed {
+      background: #2e7d32;
+      box-shadow: 0 0 5px #4caf50;
+    }
+    .task.completed button, .task.completed input {
+      background: #444;
+      color: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .check-balance {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .check-balance a {
+      color: #00ffcc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Daily Tasks</h1>
+    <div class="status">
+      Balance: <span id="balance">0</span> Taka | Tasks Done: <span id="done">0</span>/10
+    </div>
+    <div id="taskList"></div>
+    <div class="check-balance">
+      <a href="balance.html">→ Go to Balance Page</a>
+    </div>
+  </div>
+
+  <script>
+    const taskLinks = [
+      "https://mangahot00.blogspot.com/2025/06/page1html.html",
+      "https://mangahot00.blogspot.com/2025/06/page-3.html",
+      "https://mangahot00.blogspot.com/2025/06/page-2_13.html",
+      "https://mangahot00.blogspot.com/2025/06/page-4.html",
+      "https://earning254697.blogspot.com/2025/06/page-3.html",
+      "https://earning254697.blogspot.com/2025/06/hot-anime.html",
+      "https://earning254697.blogspot.com/2025/06/anime.html",
+      "https://earning254697.blogspot.com/2025/06/anime-hot-girl.html",
+      "https://earning254697.blogspot.com/2025/06/anime-video.html",
+      "https://animeandmovie.github.io/Animemix/"
+    ];
+
+    const reward = 10;
+
+    function getTodayKey() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getData() {
+      const today = getTodayKey();
+      const data = JSON.parse(localStorage.getItem("taskData")) || {};
+      if (!data[today]) {
+        data[today] = { done: [], balance: 0 };
+      }
+      return data;
+    }
+
+    function saveData(data) {
+      localStorage.setItem("taskData", JSON.stringify(data));
+    }
+
+    function updateUserBalance(taka) {
+      let userData = JSON.parse(localStorage.getItem("userData")) || {
+        balance: 0,
+        referrals: { level1: 0, level2: 0, level3: 0, totalDirectReferrals: 0 },
+        tasksCompletedToday: { date: getTodayKey(), count: 0 },
+        premiumTasksUnlocked: false,
+        premiumTasksCompletedToday: { date: getTodayKey(), count: 0 },
+        vipLevel: 0,
+        vipLastClaimDate: null,
+        dailyLoginDates: [],
+        totalRegularTasksCompleted: 0,
+        withdrawalHistory: []
+      };
+      userData.balance += taka;
+      localStorage.setItem("userData", JSON.stringify(userData));
+      console.log("Updated userData:", userData);
+    }
+
+    function updateStatus(data) {
+      const today = getTodayKey();
+      document.getElementById("balance").innerText = data[today].balance;
+      document.getElementById("done").innerText = data[today].done.length;
+    }
+
+    function renderTasks() {
+      const taskList = document.getElementById("taskList");
+      taskList.innerHTML = "";
+      const data = getData();
+      const today = getTodayKey();
+
+      taskLinks.forEach((link, index) => {
+        const taskDiv = document.createElement("div");
+        const isDone = data[today].done.includes(index);
+
+        taskDiv.className = "task" + (isDone ? " completed" : "");
+
+        const visitBtn = document.createElement("button");
+        visitBtn.innerText = isDone ? "Visited" : `Visit Task ${index + 1}`;
+        visitBtn.disabled = isDone;
+        visitBtn.onclick = () => window.open(link, "_blank");
+
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.disabled = isDone;
+
+        const uploadBtn = document.createElement("button");
+        uploadBtn.innerText = isDone ? "Uploaded" : "Upload Screenshot";
+        uploadBtn.disabled = isDone;
+        uploadBtn.onclick = () => {
+          if (!fileInput.files.length) {
+            alert("Please select a screenshot first.");
+            return;
+          }
+          if (!data[today].done.includes(index)) {
+            data[today].done.push(index);
+            data[today].balance += reward;
+            updateUserBalance(reward);
+            saveData(data);
+            renderTasks();
+          }
+        };
+
+        taskDiv.appendChild(visitBtn);
+        taskDiv.appendChild(fileInput);
+        taskDiv.appendChild(uploadBtn);
+        taskList.appendChild(taskDiv);
+      });
+
+      updateStatus(data);
+    }
+
+    document.addEventListener("DOMContentLoaded", renderTasks);
+  </script>
+</body>
+</html>

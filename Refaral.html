@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Referral System</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      margin: auto;
+      max-width: 500px;
+      box-shadow: 0 0 20px rgba(0,255,255,0.1);
+    }
+
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    input {
+      width: 80%;
+      background: #222;
+      color: #0ff;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    button {
+      background: #ff8c00;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #earnings {
+      color: #0f0;
+      font-size: 20px;
+      text-shadow: 0 0 10px #0f0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Username input only if not set -->
+  <div id="nameInputBox">
+    <h2>🔐 Enter Your Username (Only Once)</h2>
+    <input type="text" id="usernameInput" placeholder="Enter unique name">
+    <button onclick="saveUsername()">Start</button>
+  </div>
+
+  <!-- Referral dashboard -->
+  <div class="box" style="display:none;" id="referralBox">
+    <p><b>👤 Username:</b> <span id="userNameDisplay"></span></p>
+    <p><b>Level:</b> <span id="level">0</span></p>
+    <p><b>Referrals:</b> <span id="referrals">0</span></p>
+    <p><b>Earnings:</b> <span id="earnings">0</span> Taka</p>
+
+    <button onclick="activateLevel()">🔓 Activate Level</button>
+
+    <p><b>Your Referral Link:</b></p>
+    <input type="text" id="refLink" readonly>
+  </div>
+
+  <script>
+    let level = 0, referrals = 0, earnings = 0, userID = "";
+
+    function saveUsername() {
+      const input = document.getElementById("usernameInput").value.trim();
+      if (!input) return alert("Please enter a valid name");
+
+      // ✅ Only set once
+      if (!localStorage.getItem("userID")) {
+        localStorage.setItem("userID", input);
+        loadUser();
+      } else {
+        alert("Username already set and cannot be changed!");
+      }
+    }
+
+    function getRateByLevel(lv) {
+      if (lv === 0) return 100;
+      if (lv === 1) return 125;
+      if (lv === 2) return 175;
+      if (lv >= 3) return 200;
+    }
+
+    function updateUI() {
+      document.getElementById("userNameDisplay").innerText = userID;
+      document.getElementById("level").innerText = level;
+      document.getElementById("referrals").innerText = referrals;
+      document.getElementById("earnings").innerText = earnings;
+
+      let siteBase = "https://yourwebsite.com"; // 🔁 তোমার সাইট URL এখানে বসাও
+      document.getElementById("refLink").value = siteBase + "?ref=" + userID;
+
+      // Show dashboard, hide input
+      document.getElementById("referralBox").style.display = "block";
+      document.getElementById("nameInputBox").style.display = "none";
+    }
+
+    function activateLevel() {
+      let needed = [5, 10, 15];
+      if (level >= 3) return alert("Already Max Level!");
+
+      if (referrals >= needed[level]) {
+        level++;
+        localStorage.setItem("level_" + userID, level);
+        updateUI();
+        alert("🎉 Level " + level + " Activated!");
+      } else {
+        alert("❌ Need " + needed[level] + " referrals");
+      }
+    }
+
+    function loadUser() {
+      userID = localStorage.getItem("userID");
+      if (userID) {
+        level = parseInt(localStorage.getItem("level_" + userID)) || 0;
+        referrals = parseInt(localStorage.getItem("referrals_" + userID)) || 0;
+        earnings = parseInt(localStorage.getItem("earnings_" + userID)) || 0;
+        updateUI();
+      }
+    }
+
+    // Referral Check
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get("ref");
+
+    if (ref && !localStorage.getItem("referred_" + ref)) {
+      let refCount = parseInt(localStorage.getItem("referrals_" + ref)) || 0;
+      let refEarn = parseInt(localStorage.getItem("earnings_" + ref)) || 0;
+      let refLevel = parseInt(localStorage.getItem("level_" + ref)) || 0;
+      let rate = getRateByLevel(refLevel);
+
+      refCount += 1;
+      refEarn += rate;
+
+      localStorage.setItem("referrals_" + ref, refCount);
+      localStorage.setItem("earnings_" + ref, refEarn);
+      localStorage.setItem("referred_" + ref, "yes");
+    }
+
+    // On page load
+    window.onload = loadUser;
+  </script>
+</body>
+</html>

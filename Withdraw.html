@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw Funds</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; display: flex; flex-direction: column; align-items: center;}
+        header { background-color: #333; color: white; padding: 1em 0; text-align: center; width: 100%;}
+        nav { display: flex; justify-content: center; background-color: #444; padding: 0.5em; width: 100%;}
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-size: 1.1em;}
+        nav a:hover { text-decoration: underline; }
+        .container { width: 90%; max-width: 700px; margin: 20px auto; padding: 20px; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 8px;}
+        h1, h2, h3 { text-align: center; color: #333; }
+        .withdraw-conditions { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 5px; margin-bottom: 20px;}
+        .withdraw-conditions ul { list-style: disc; margin-left: 20px; }
+        .withdraw-form label { display: block; margin-top: 10px; font-weight: bold; }
+        .withdraw-form input, .withdraw-form select { width: calc(100% - 22px); padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .withdraw-form button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer; margin-top: 20px; display: block; width: 100%; }
+        .withdraw-form button:disabled { background-color: #6c757d; }
+        .withdraw-history { margin-top: 30px; }
+        .withdraw-history table { width: 100%; border-collapse: collapse; }
+        .withdraw-history th, .withdraw-history td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .withdraw-history th { background-color: #f0f0f0; }
+        .pending-timer { font-weight: bold; color: #ffc107; } /* Yellow for pending */
+        .completed-status { color: #28a745; } /* Green for completed */
+        .status-message { text-align: center; padding: 10px; margin-top: 15px; border-radius: 5px; }
+        .status-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;}
+        .status-message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;}
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Withdraw Your Earnings</h2>
+        <div id="statusMessage"></div>
+
+        <div class="withdraw-conditions">
+            <h4>Withdrawal Conditions:</h4>
+            <ul>
+                <li>You must be active on the site for at least 12 different days. (Current active days: <span id="activeDays">0</span>/12)</li>
+                <li>You must complete a total of 120 regular tasks (from Task.html). (Current tasks completed: <span id="totalTasksDone">0</span>/120)</li>
+            </ul>
+        </div>
+
+        <form id="withdrawForm" class="withdraw-form">
+            <label for="withdrawAmount">Amount to Withdraw (TK):</label>
+            <input type="number" id="withdrawAmount" name="withdrawAmount" min="1" required>
+
+            <label for="paymentMethod">Payment Method:</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+                <option value="bkash">Bkash</option>
+                <option value="nagad">Nagad</option>
+                <option value="rocket">Rocket</option>
+                <option value="upay">Upay</option>
+                <option value="recharge">Mobile Recharge</option>
+            </select>
+
+            <label for="accountNumber">Account Number / Mobile Number:</label>
+            <input type="text" id="accountNumber" name="accountNumber" required>
+
+            <button type="submit" id="submitWithdrawButton">Request Withdraw</button>
+        </form>
+
+        <div class="withdraw-history">
+            <h3>Withdrawal History</h3>
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount (TK)</th>
+                        <th>Method</th>
+                        <th>Account</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- History rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const MIN_ACTIVE_DAYS = 12;
+        const MIN_TASKS_COMPLETED = 120; // 10 tasks * 12 days
+
+        function getUserData() {
+            const data = localStorage.getItem('userData');
+            return data ? JSON.parse(data) : initializeUserData();
+        }
+
+        function saveUserData(userData) {
+            localStorage.setItem('userData', JSON.stringify(userData));
+        }
+
+        function initializeUserData() {
+            const initialUserData = {
+                balance: 0,
+                referrals: { level1: 0, level2: 0, level3: 0, totalDirectReferrals: 0 },
+                tasksCompletedToday: { date: new Date().toISOString().slice(0, 10), count: 0, completedIndices: [] },
+                premiumTasksUnlocked: false,
+                premiumTasksCompletedToday: { date: new Date().toISOString().slice(0, 10), count: 0, completedIndices: [] },
+                vipLevel: 0,
+                vipLastClaimDate: null,
+                dailyLoginDates: [], // Array of unique 'YYYY-MM-DD' strings
+                totalRegularTasksCompleted: 0,
+                withdrawalHistory: [] // { date, amount, method, account, status: 'pending'/'completed', pendingUntil }
+            };
+            saveUserData(initialUserData);
+            return initialUserData;
+        }
+
+        function updateWithdrawalConditionsDisplay() {
+            const userData = getUserData();
+            document.getElementById('activeDays').textContent = userData.dailyLoginDates.length;
+            document.getElementById('totalTasksDone').textContent = userData.totalRegularTasksCompleted;
+
+            const withdrawButton = document.getElementById('submitWithdrawButton');
+            if (userData.dailyLoginDates.length >= MIN_ACTIVE_DAYS && userData.totalRegularTasksCompleted >= MIN_TASKS_COMPLETED) {
+                withdrawButton.disabled = false;
+                 displayStatusMessage('', 'none'); // Clear any previous error message
+            } else {
+                withdrawButton.disabled = true;
+                displayStatusMessage(`Withdrawal disabled. Conditions not met. Active days: ${userData.dailyLoginDates.length}/${MIN_ACTIVE_DAYS}, Tasks: ${userData.totalRegularTasksCompleted}/${MIN_TASKS_COMPLETED}.`, 'error');
+            }
+        }
+        
+        function displayStatusMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message'; // Reset classes
+            if (type === 'success') {
+                statusDiv.classList.add('success');
+            } else if (type === 'error') {
+                statusDiv.classList.add('error');
+            } else { // 'none' or other
+                 statusDiv.style.display = 'none';
+                 return;
+            }
+            statusDiv.style.display = 'block';
+        }
+
+
+        function renderWithdrawalHistory() {
+            const userData = getUserData();
+            const historyTableBody = document.getElementById('historyTable').getElementsByTagName('tbody')[0];
+            historyTableBody.innerHTML = ''; // Clear existing rows
+
+            userData.withdrawalHistory.forEach(item => {
+                const row = historyTableBody.insertRow();
+                row.insertCell().textContent = new Date(item.date).toLocaleDateString();
+                row.insertCell().textContent = item.amount.toFixed(2);
+                row.insertCell().textContent = item.method;
+                row.insertCell().textContent = item.account;
+                
+                const statusCell = row.insertCell();
+                if (item.status === 'pending') {
+                    const now = new Date().getTime();
+                    if (now >= item.pendingUntil) {
+                        item.status = 'completed'; // Auto-complete if time is up
+                        // In a real app, this status update would come from a backend.
+                        // For simulation, we'll update it here and re-save.
+                        // Note: Balance was already deducted at request time.
+                        saveUserData(userData); // Save the updated status
+                        statusCell.textContent = 'Completed';
+                        statusCell.classList.add('completed-status');
+                    } else {
+                        const timeLeftMs = item.pendingUntil - now;
+                        const hours = Math.floor(timeLeftMs / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeLeftMs % (1000 * 60 * 60)) / (1000 * 60));
+                        statusCell.innerHTML = `Pending (<span class="pending-timer">${hours}h ${minutes}m left</span>)`;
+                    }
+                } else {
+                    statusCell.textContent = 'Completed';
+                    statusCell.classList.add('completed-status');
+                }
+            });
+        }
+        
+        document.getElementById('withdrawForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const userData = getUserData();
+
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const method = document.getElementById('paymentMethod').value;
+            const accountNumber = document.getElementById('accountNumber').value;
+
+            if (isNaN(amount) || amount <= 0) {
+                displayStatusMessage('Please enter a valid amount.', 'error');
+                return;
+            }
+            if (amount > userData.balance) {
+                displayStatusMessage('Insufficient balance.', 'error');
+                return;
+            }
+            if (!accountNumber.trim()) {
+                 displayStatusMessage('Account number cannot be empty.', 'error');
+                return;
+            }
+
+            // Deduct balance and add to history
+            userData.balance -= amount;
+            const now = new Date();
+            const pendingUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).getTime(); // 24 hours from now
+
+            userData.withdrawalHistory.unshift({ // Add to beginning of array
+                date: now.toISOString(),
+                amount: amount,
+                method: method,
+                account: accountNumber,
+                status: 'pending',
+                pendingUntil: pendingUntil
+            });
+
+            saveUserData(userData);
+            displayStatusMessage(`Withdrawal request for ${amount.toFixed(2)} TK submitted. It will be processed within 24 hours.`, 'success');
+            document.getElementById('withdrawForm').reset();
+            updateWithdrawalConditionsDisplay(); // Update display, including balance for condition checks
+            renderWithdrawalHistory();
+        });
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ensure userData is initialized
+            if (!localStorage.getItem('userData')) {
+                initializeUserData();
+            }
+            updateWithdrawalConditionsDisplay();
+            renderWithdrawalHistory();
+            // Set an interval to update pending timers in history
+            setInterval(renderWithdrawalHistory, 60000); // Update every minute
+        });
+    </script>
+</body>
+</html>
